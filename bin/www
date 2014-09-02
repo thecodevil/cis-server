@@ -1,0 +1,62 @@
+/*!
+ * /usr/bin/env node
+ *
+ * Naming conventions
+ * 1. method parameters, Hungarian notation
+ * 2. local variables  , start with underscore _
+ *
+ * @author JD.Young.Yang
+ * @since 2014-05-13
+ */
+
+
+var debug = require('debug')('my-application');
+var http  = require('http');
+var app   = require('../app');
+app.set('port', 3000);
+
+var server = http.createServer(app);
+
+var io = require('socket.io').listen(server);
+io.set('log level', 1); // log level
+//var sessionSocket = new app.SessionSocket(io, app.sessionStore, app.cookieParser);
+
+//require('../bootstrap').initDB();
+
+var teacherIOHandler  = require('../iohandler/teacherIOHandler');
+var studentIOHandler = require('../iohandler/studentIOHandler');
+var userService = require('../service/service.user');
+var jwt = require('socketio-jwt');
+var jwt_secret = 'cis_secret';
+
+io.set('authorization', jwt.authorize({
+    secret: jwt_secret,
+    handshake: true
+}));
+
+//var online_user = {};
+io.sockets.on('connection', function (socket) {
+    //var _token = socket.handshake.decoded_token;
+    //online_user[socket.id] = _token;
+    console.log(socket.id + "成功连接服务器...");
+    /*socket.on('disconnect', function() {
+        console.log(socket.id)
+        var _who = online_user[socket.id];
+        console.log(_who)
+    });*/
+    studentIOHandler.onListen(socket);
+    teacherIOHandler.onListen(socket);
+
+});
+/*
+sessionSocket.on('connection', function (err, socket, session) {
+    console.log(session)
+    if(session) {
+        speakerIOHandler.onListen(socket, session);
+        audienceIOHandler.onListen(socket, session);
+    }
+
+});
+*/
+
+server.listen(3000);
